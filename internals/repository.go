@@ -19,12 +19,12 @@ const (
 	authCode string = "4/1AY0e-g5i8QV3oCNwHuhwKyL3XUuLDB6yIpweXnWjoEXwblgZfSHRWgY37T8"
 )
 
-type Adapter struct {
+type Repo struct {
 	Srv           *sheets.Service
 	SpreadsheetId string
 }
 
-func NewAdapter() *Adapter {
+func NewRepo() *Repo {
 	// todo: tableId из енвешек
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
@@ -39,7 +39,7 @@ func NewAdapter() *Adapter {
 
 	client := getClient(config)
 
-	adapter := new(Adapter)
+	adapter := new(Repo)
 
 	adapter.Srv, err = sheets.New(client)
 	if err != nil {
@@ -51,7 +51,7 @@ func NewAdapter() *Adapter {
 	return adapter
 }
 
-func (adapter *Adapter) GetValues(readRange string) [][]interface{} {
+func (adapter *Repo) GetValues(readRange string) [][]interface{} {
 	log.Printf("get range %s", readRange)
 
 	resp, err := adapter.Srv.Spreadsheets.Values.Get(adapter.SpreadsheetId, readRange).Do()

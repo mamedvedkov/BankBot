@@ -10,21 +10,21 @@ import (
 )
 
 /*
-"/status"
+"/status" +
 "/aboutme"
-"/cards"
-"/debts"
-"/rules"
+"/cards" +
+"/debts" +
+"/rules" +
 "/search"
-"/aboutMyPayment"
+"/aboutMyPayment" +
 */
 
-func Process(adapter *Adapter, cmd string, isMain bool, update tgbotapi.Update) string {
+func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string {
 	var response string
 
 	id := update.Message.From.ID
 
-	if _, err := getRowByTgId(adapter, id); err != nil {
+	if _, err := getRowByTgId(repo, id); err != nil {
 		return err.Error()
 	}
 
@@ -34,11 +34,18 @@ func Process(adapter *Adapter, cmd string, isMain bool, update tgbotapi.Update) 
 
 	switch cmd {
 	case "status":
-		response = status(adapter)
+		response = status(repo)
 	case "aboutme":
-		response = aboutme(adapter, id)
+		response = aboutme(repo, id)
 	case "aboutMyPayment":
-		response = aboutMyPayment(adapter, id)
+		response = aboutMyPayment(repo, id)
+	case "cards":
+		response = cardHolders(repo)
+	case "rules":
+		response = showRules()
+	case "debts":
+		response = debts(repo)
+
 	default:
 		response = "Функция не реализована"
 	}
@@ -46,28 +53,28 @@ func Process(adapter *Adapter, cmd string, isMain bool, update tgbotapi.Update) 
 	return response
 }
 
-func status(adapter *Adapter) string {
+func status(repo *Repo) string {
 	var out string
 
 	for i := 7; i <= 10; i++ {
 		valuesRange := fmt.Sprintf("A%v:B%v", i, i)
-		resVal := parseRow(adapter.GetValues(valuesRange))
+		resVal := parseRow(repo.GetValues(valuesRange))
 		out += fmt.Sprintf("%v - %v\n", resVal[0], resVal[1])
 	}
 
 	return out
 }
 
-func aboutme(adapter *Adapter, id int) string {
+func aboutme(adapter *Repo, id int) string {
 	return ""
 }
 
-func aboutMyPayment(adapter *Adapter, id int) string {
-	row, _ := getRowByTgId(adapter, id)
+func aboutMyPayment(repo *Repo, id int) string {
+	row, _ := getRowByTgId(repo, id)
 	valuesRange := fmt.Sprintf("Взносы!D%v:N%v", row, row)
-	resVal := parseRow(adapter.GetValues(valuesRange))
+	resVal := parseRow(repo.GetValues(valuesRange))
 	titlesRange := "Взносы!D1:N1"
-	resTitle := parseRow(adapter.GetValues(titlesRange))
+	resTitle := parseRow(repo.GetValues(titlesRange))
 
 	out := "Статистика по платежам\n"
 
@@ -84,8 +91,63 @@ func aboutMyPayment(adapter *Adapter, id int) string {
 	return out
 }
 
-func getRowByTgId(adapter *Adapter, tgId int) (int, error) {
-	res := adapter.GetValues("Участники!A2:B250")
+func cardHolders(repo *Repo) string {
+	cardHoldersRange := "Держатели!A2:B25"
+	res := repo.GetValues(cardHoldersRange)
+	number := res[0][0]
+	sum := res[0][1]
+	city := res[2][0]
+	bankName := res[3][0]
+	systemName := res[4][0]
+	link := res[5][0]
+
+	result := fmt.Sprintf("номер карты:\t%s\n", number)
+	result += fmt.Sprintf("сумма на карте:\t%s\n", sum)
+	result += fmt.Sprintf("город:\t%s\n", city)
+	result += fmt.Sprintf("карта:\t%s %s", bankName, systemName)
+
+	if link != "" {
+		result += fmt.Sprintf("\nПополнить без комиссии можно по ссылке:\n%s\n", link)
+	}
+
+	number = res[17][0]
+	sum = res[17][1]
+	city = res[19][0]
+	bankName = res[20][0]
+	systemName = res[21][0]
+
+	if number != "" {
+		result += fmt.Sprintf("\nномер карты:\t%s\n", number)
+		result += fmt.Sprintf("сумма на карте:\t%s\n", sum)
+		result += fmt.Sprintf("город:\t%s\n", city)
+		result += fmt.Sprintf("карта:\t%s %s", bankName, systemName)
+	}
+
+	return result
+}
+
+func showRules() string {
+	rulesLink := "заглушка для ссылки на правила"
+	return fmt.Sprintf("Правила работы кассы\n%s", rulesLink)
+}
+
+func debts(repo *Repo) string {
+	debtsRange := "Займы!A2:C100"
+	res := repo.GetValues(debtsRange)
+	result := ""
+
+	for _, row := range res {
+		if row[1] == "0" || row[1] == "" {
+			continue
+		}
+		result += fmt.Sprintf("%v: %v\tдо %v\n", row[0], row[1], row[2])
+	}
+
+	return result
+}
+
+func getRowByTgId(repo *Repo, tgId int) (int, error) {
+	res := repo.GetValues("Участники!A2:B250")
 
 	var rowId int
 
@@ -95,7 +157,7 @@ func getRowByTgId(adapter *Adapter, tgId int) (int, error) {
 		}
 		val, _ := strconv.Atoi(fmt.Sprintf("%v", row[1]))
 		if val == tgId {
-			log.Printf("Idx=%v row=%s row[0]=%s row[1]=%s", idx, row, row[0], row[1])
+			log.Printf("Idx=%v row=%s row[0]=%s row[1]=%s\n", idx, row, row[0], row[1])
 			rowId = idx
 			break
 		}
@@ -106,7 +168,6 @@ func getRowByTgId(adapter *Adapter, tgId int) (int, error) {
 	return rowId + 2, nil
 }
 
-/*
 //Парсим результат если нужен столбец
 func parseCollumn(values [][]interface{}) []string {
 	r := []rune(fmt.Sprintf("%v", values))
@@ -116,7 +177,6 @@ func parseCollumn(values [][]interface{}) []string {
 
 	return strings.Split(out, ";")
 }
-*/
 
 //Парсим результат если нужна строка
 func parseRow(values [][]interface{}) []string {

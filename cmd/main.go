@@ -15,22 +15,19 @@ const botName string = "kjhgskdf743_bot"
 const mainChatId int64 = 42
 
 func main() {
-	adapter := internals.NewAdapter()
+	adapter := internals.NewRepo()
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go botWork(adapter)
 
-	//пример GetValues
-	//adapter.GetValues("A1:D16")
-
 	<-done
 
 	log.Print("Бот отключился")
 }
 
-func botWork(adapter *internals.Adapter) {
+func botWork(repo *internals.Repo) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		log.Panic("Всё упало на создании бота")
@@ -45,27 +42,21 @@ func botWork(adapter *internals.Adapter) {
 	if err != nil {
 		log.Panic("Всё упало на создании канала апдейтов")
 	}
+
 	for update := range updates {
 		if update.Message == nil { // ignore any non-Message Updates
 			continue
 		}
 
 		// todo: роутер запросов
-		// принимает adapter *App, upd update
+		// принимает repo *App, upd update
 		// update.Message.Command() была ли команда
 		if cmd := update.Message.Command(); cmd != "" {
 			log.Printf("from [%s] id = %v cmd = %s", update.Message.From.UserName, update.Message.From.ID, cmd)
-			response := internals.Process(adapter, cmd, update.Message.Chat.ID == mainChatId, update)
+			response := internals.Process(repo, cmd, update.Message.Chat.ID == mainChatId, update)
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
 			bot.Send(msg)
 		}
-
-		//log.Printf("[%s] %s", update.Message.From.UserName, update.Message.Text)
-
-		//msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
-		//msg.ReplyToMessageID = update.Message.MessageID
-
-		//bot.Send(msg)
 	}
 }

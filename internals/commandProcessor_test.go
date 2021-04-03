@@ -6,7 +6,7 @@ import (
 
 func Test_getRowByTgId(t *testing.T) {
 	type args struct {
-		adapter *Adapter
+		adapter *Repo
 		tgId    int
 	}
 	tests := []struct {
@@ -17,7 +17,7 @@ func Test_getRowByTgId(t *testing.T) {
 		{
 			name: "testGetRowByTgId",
 			args: args{
-				adapter: NewAdapter(),
+				adapter: NewRepo(),
 				tgId:    72597934,
 			},
 			want: 3,
@@ -26,7 +26,7 @@ func Test_getRowByTgId(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got, _ := getRowByTgId(tt.args.adapter, tt.args.tgId); got != tt.want {
-				t.Errorf("getRowByTgId() = %v, want %v", got, tt.want)
+				t.Errorf("\ngetRowByTgId()\n%v,\nwant\n%v", got, tt.want)
 			}
 		})
 	}
@@ -34,7 +34,7 @@ func Test_getRowByTgId(t *testing.T) {
 
 func Test_aboutMyPayment(t *testing.T) {
 	type args struct {
-		adapter *Adapter
+		adapter *Repo
 		id      int
 	}
 	tests := []struct {
@@ -45,7 +45,7 @@ func Test_aboutMyPayment(t *testing.T) {
 		{
 			name: "testAboutMyPayment",
 			args: args{
-				adapter: NewAdapter(),
+				adapter: NewRepo(),
 				id:      69711013,
 			},
 			want: "Статистика по платежам\n" +
@@ -62,7 +62,7 @@ func Test_aboutMyPayment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := aboutMyPayment(tt.args.adapter, tt.args.id); got != tt.want {
-				t.Errorf("aboutMyPayment() = %v, want %v", got, tt.want)
+				t.Errorf("\naboutMyPayment()\n%v,\nwant\n%v", got, tt.want)
 			}
 		})
 	}
@@ -70,7 +70,7 @@ func Test_aboutMyPayment(t *testing.T) {
 
 func Test_status(t *testing.T) {
 	type args struct {
-		adapter *Adapter
+		adapter *Repo
 	}
 	tests := []struct {
 		name string
@@ -79,17 +79,62 @@ func Test_status(t *testing.T) {
 	}{
 		{
 			name: "test status",
-			args: args{NewAdapter()},
-			want: "Капитал - 1 320 950₽\n" +
-				"Занято - 898 337₽\n" +
-				"Запас - 150 208₽\n" +
-				"Актив - 272 405₽",
+			args: args{NewRepo()},
+			want: "Капитал - 1 320 950₽\nЗанято - 898 337₽\nЗапас - 150 208₽\nАктив - 272 405₽",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := status(tt.args.adapter); got != tt.want {
-				t.Errorf("status() = %v, want %v", got, tt.want)
+				t.Errorf("\nstatus()\n%v,\nwant\n%v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_cardHolders(t *testing.T) {
+	type args struct {
+		repo *Repo
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test card holders",
+			args: args{NewRepo()},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := cardHolders(tt.args.repo); got != tt.want {
+				t.Errorf("cardHolders() =\n%v\n, want\n%v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_debts(t *testing.T) {
+	type args struct {
+		repo *Repo
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test for debs",
+			args: args{NewRepo()},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := debts(tt.args.repo); got != tt.want {
+				t.Errorf("debts() =\n%v\n, want\n%v", got, tt.want)
 			}
 		})
 	}
