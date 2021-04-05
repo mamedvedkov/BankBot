@@ -14,6 +14,7 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
+// TODO: убрать в енв
 const (
 	tableId  string = "1YyqXyp0p_P3NkWry1p4S_7ejOcV0H7azqrYpIaMWD3I"
 	authCode string = "4/1AY0e-g5i8QV3oCNwHuhwKyL3XUuLDB6yIpweXnWjoEXwblgZfSHRWgY37T8"
@@ -25,7 +26,6 @@ type Repo struct {
 }
 
 func NewRepo() *Repo {
-	// todo: tableId из енвешек
 	b, err := ioutil.ReadFile("credentials.json")
 	if err != nil {
 		log.Fatalf("Unable to read client secret file: %v", err)
@@ -84,7 +84,7 @@ func getClient(config *oauth2.Config) *http.Client {
 // Request a token from the web, then returns the retrieved token.
 func getTokenFromWeb(config *oauth2.Config) *oauth2.Token {
 
-	//todo: не хватает получения authCode по новым кредам
+	// TODO: не хватает получения authCode по новым кредам
 
 	tok, err := config.Exchange(context.TODO(), authCode)
 	if err != nil {

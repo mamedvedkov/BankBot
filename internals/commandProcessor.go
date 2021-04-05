@@ -24,6 +24,7 @@ func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string
 
 	id := update.Message.From.ID
 
+	// TODO: обработка новых пользователей, а не отфутболивание
 	if _, err := getRowByTgId(repo, id); err != nil {
 		return err.Error()
 	}

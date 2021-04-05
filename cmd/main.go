@@ -10,6 +10,7 @@ import (
 	"github.com/mamedvedkov/BankBot/internals"
 )
 
+// TODO: убрать в енв
 const token string = "1010464119:AAHIAE-Z_XK3A3Zuawjm_2bWyfEwn1rExgg"
 const botName string = "kjhgskdf743_bot"
 const mainChatId int64 = 42
@@ -38,6 +39,7 @@ func botWork(repo *internals.Repo) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
+	// TODO: чтение из канала несколькими воркерами??
 	updates, err := bot.GetUpdatesChan(u)
 	if err != nil {
 		log.Panic("Всё упало на создании канала апдейтов")
@@ -48,9 +50,7 @@ func botWork(repo *internals.Repo) {
 			continue
 		}
 
-		// todo: роутер запросов
-		// принимает repo *App, upd update
-		// update.Message.Command() была ли команда
+		// TODO: роутер запросов
 		if cmd := update.Message.Command(); cmd != "" {
 			log.Printf("from [%s] id = %v cmd = %s", update.Message.From.UserName, update.Message.From.ID, cmd)
 			response := internals.Process(repo, cmd, update.Message.Chat.ID == mainChatId, update)
