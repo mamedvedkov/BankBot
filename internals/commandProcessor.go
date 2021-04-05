@@ -2,7 +2,7 @@ package internals
 
 import (
 	"fmt"
-	"log"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -11,11 +11,11 @@ import (
 
 /*
 "/status" +
-"/aboutme"
+"/aboutme" +
 "/cards" +
 "/debts" +
 "/rules" +
-"/search"
+"/search" +
 "/aboutMyPayment" +
 */
 
@@ -45,7 +45,8 @@ func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string
 		response = showRules()
 	case "debts":
 		response = debts(repo)
-
+	case "search":
+		response = searchForUser(repo, update.Message.Text)
 	default:
 		response = "Функция не реализована"
 	}
@@ -56,17 +57,14 @@ func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string
 func status(repo *Repo) string {
 	var out string
 
-	for i := 7; i <= 10; i++ {
-		valuesRange := fmt.Sprintf("A%v:B%v", i, i)
-		resVal := parseRow(repo.GetValues(valuesRange))
-		out += fmt.Sprintf("%v - %v\n", resVal[0], resVal[1])
+	valuesRange := "A7:B10"
+	res:= repo.GetValues(valuesRange)
+
+	for _, row := range res {
+		out += fmt.Sprintf("%v - %v\n", row[0], row[1])
 	}
 
 	return out
-}
-
-func aboutme(adapter *Repo, id int) string {
-	return ""
 }
 
 func aboutMyPayment(repo *Repo, id int) string {
@@ -146,6 +144,105 @@ func debts(repo *Repo) string {
 	return result
 }
 
+func searchForUser(repo *Repo, text string) string {
+	splitedText := strings.Split(text, "/search ")
+
+	if len(splitedText) == 1 {
+		return "Стоит указать кого вы ищите"
+	}
+
+	text = splitedText[1]
+
+	if text == "" {
+		return "Стоит указать кого вы ищите"
+	}
+
+	rowNum, err := getRowByName(repo, text)
+	if err != nil {
+		return err.Error()
+	}
+
+	return searchByRow(repo, rowNum)
+}
+
+func aboutme(repo *Repo, id int) string {
+	rowNum, err := getRowByTgId(repo, id)
+	if err != nil {
+		return err.Error()
+	}
+
+	return searchByRow(repo, rowNum)
+}
+
+func searchByRow(repo *Repo, rowNum int) string {
+	valuesRange := fmt.Sprintf("Участники!A%v:M%v", rowNum, rowNum)
+	resVal := parseRow(repo.GetValues(valuesRange))
+	titlesRange := "Участники!A1:M1"
+	resTitle := parseRow(repo.GetValues(titlesRange))
+
+	out := "Информация о пользователе\n"
+
+	for i, _ := range resVal {
+		if resTitle[i] == "" {
+			break
+		}
+		if i == 1 || i == 2 || resVal[i] == "" {
+			continue
+		}
+		if i == 11 || i == 12 {
+			temp := ""
+			if resVal[i] == "1" {
+				temp = "оплачены"
+			} else {
+				temp = "неоплачены"
+			}
+			out += fmt.Sprintf("%v : %v \n", resTitle[i], temp)
+			continue
+		}
+
+		out += fmt.Sprintf("%v : %v \n", resTitle[i], resVal[i])
+	}
+
+	return out
+
+}
+
+func getRowByName(repo *Repo, name string) (int, error) {
+	res := repo.GetValues("Участники!A2:A250")
+	name = strings.ReplaceAll(name, "ё", "е")
+	name = strings.ToLower(name)
+
+	var rowId int
+	var counter int
+	var tempText string
+
+	r, err := regexp.Compile(fmt.Sprintf(`(%s){1}`, name))
+	if err != nil {
+		return 0, err
+	}
+
+	for idx, row := range res {
+		tempText = fmt.Sprintf("%v", row[0])
+		tempText = strings.ReplaceAll(tempText, "ё", "е")
+		tempText = strings.ToLower(tempText)
+		found := r.MatchString(tempText)
+		if found {
+			rowId = idx + 2
+			counter++
+		}
+	}
+
+	if counter == 0 {
+		return 0, fmt.Errorf("поиск не дал результатов, попробуйте другой запрос")
+	}
+
+	if counter > 1 {
+		return 0, fmt.Errorf("слишком много совпадений, попробуйте другой запрос")
+	}
+
+	return rowId, nil
+}
+
 func getRowByTgId(repo *Repo, tgId int) (int, error) {
 	res := repo.GetValues("Участники!A2:B250")
 
@@ -157,13 +254,13 @@ func getRowByTgId(repo *Repo, tgId int) (int, error) {
 		}
 		val, _ := strconv.Atoi(fmt.Sprintf("%v", row[1]))
 		if val == tgId {
-			log.Printf("Idx=%v row=%s row[0]=%s row[1]=%s\n", idx, row, row[0], row[1])
+			//log.Printf("Idx=%v row=%s row[0]=%s row[1]=%s\n", idx, row, row[0], row[1])
 			rowId = idx
 			break
 		}
 	}
 
-	log.Println(res[rowId][1])
+	//log.Println(res[rowId][1])
 
 	return rowId + 2, nil
 }

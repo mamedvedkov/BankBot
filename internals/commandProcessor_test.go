@@ -139,3 +139,84 @@ func Test_debts(t *testing.T) {
 		})
 	}
 }
+
+func Test_getRowByName(t *testing.T) {
+	type args struct {
+		repo *Repo
+		name string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name: "тест поиск строки по фамилии",
+			args: args{
+				repo: NewRepo(),
+				name: "авиро",
+			},
+			want:    2,
+			wantErr: false,
+		},
+		{
+			name: "тест поиск строки по имени",
+			args: args{
+				repo: NewRepo(),
+				name: "григор",
+			},
+			want:    2,
+			wantErr: false,
+		},
+		{
+			name: "тест поиск строки по имени, слишком много результатов",
+			args: args{
+				repo: NewRepo(),
+				name: "алексан",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getRowByName(tt.args.repo, tt.args.name)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getRowByName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getRowByName() got =\n%v\n, want\n%v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_searchByRow(t *testing.T) {
+	type args struct {
+		repo   *Repo
+		rowNum int
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "поиск по номеру строки",
+			args: args{
+				repo:   NewRepo(),
+				rowNum: 3,
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := searchByRow(tt.args.repo, tt.args.rowNum); got != tt.want {
+				t.Errorf("searchByRow() =\n%v\n, want\n%v", got, tt.want)
+			}
+		})
+	}
+}

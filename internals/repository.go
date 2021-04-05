@@ -52,7 +52,7 @@ func NewRepo() *Repo {
 }
 
 func (adapter *Repo) GetValues(readRange string) [][]interface{} {
-	log.Printf("get range %s", readRange)
+	//log.Printf("get range %s", readRange)
 
 	resp, err := adapter.Srv.Spreadsheets.Values.Get(adapter.SpreadsheetId, readRange).Do()
 	if err != nil {
