@@ -56,6 +56,7 @@ func botWork(repo *internals.Repo) {
 			response := internals.Process(repo, cmd, update.Message.Chat.ID == mainChatId, update)
 
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, response)
+			msg.ParseMode = "Markdown"
 			bot.Send(msg)
 		}
 	}

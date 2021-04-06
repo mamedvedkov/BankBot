@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
@@ -58,11 +59,13 @@ func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string
 func status(repo *Repo) string {
 	var out string
 
+	//TODO: новое поле на B11
 	valuesRange := "A7:B10"
-	res:= repo.GetValues(valuesRange)
+	res := repo.GetValues(valuesRange)
 
 	for _, row := range res {
-		out += fmt.Sprintf("%v - %v\n", row[0], row[1])
+		out += fmt.Sprintf("`%-7v- %10v`\n",
+			row[0], row[1])
 	}
 
 	return out
@@ -133,16 +136,73 @@ func showRules() string {
 func debts(repo *Repo) string {
 	debtsRange := "Займы!A2:C100"
 	res := repo.GetValues(debtsRange)
-	result := ""
+	userRange := "Участники!A2:B100"
+	users := repo.GetValues(userRange)
+
+	delay := []string{"Просрочки"}
+	thisWeek := []string{"Платежи на этой неделе"}
+	otherDeb := []string{"Остальные задолжности"}
 
 	for _, row := range res {
 		if row[1] == "0" || row[1] == "" {
 			continue
 		}
-		result += fmt.Sprintf("%v: %v\tдо %v\n", row[0], row[1], row[2])
+		rawDate := strings.ReplaceAll(fmt.Sprintf("%v", row[2]), ".", "-")
+		date, err := time.Parse("02-01-2006", rawDate)
+		if err != nil {
+			return err.Error()
+		}
+		if isDelay(date) {
+			userRow, _ := getRowByName(repo, fmt.Sprintf("%v", row[0]))
+			userId := users[userRow-2][1]
+			delay = append(delay, fmt.Sprintf("[%s](tg://user?id=%v): %v\tдо %v", row[0], userId, row[1], row[2]))
+			continue
+		}
+		if isThisWeek(date) {
+			userRow, _ := getRowByName(repo, fmt.Sprintf("%v", row[0]))
+			userId := users[userRow-2][1]
+			thisWeek = append(thisWeek, fmt.Sprintf("[%s](tg://user?id=%v): %v\tдо %v", row[0], userId, row[1], row[2]))
+			continue
+		}
+		otherDeb = append(otherDeb, fmt.Sprintf("%v: %v\tдо %v", row[0], row[1], row[2]))
+	}
+
+	var result string
+
+	if len(delay) != 1 {
+		for _, val := range delay {
+			result += val
+			result += "\n"
+		}
+		result += "\n"
+	}
+
+	if len(thisWeek) != 1 {
+		for _, val := range thisWeek {
+			result += val
+			result += "\n"
+		}
+		result += "\n"
+	}
+
+	if len(otherDeb) != 1 {
+		for _, val := range otherDeb {
+			result += val
+			result += "\n"
+		}
 	}
 
 	return result
+}
+
+func isThisWeek(date time.Time) bool {
+	_, now := time.Now().ISOWeek()
+	_, debtWeek := date.ISOWeek()
+	return now == debtWeek
+}
+
+func isDelay(date time.Time) bool {
+	return (date.Add(time.Hour*23).Add(time.Minute*59)).Before(time.Now())
 }
 
 func searchForUser(repo *Repo, text string) string {
@@ -181,13 +241,16 @@ func searchByRow(repo *Repo, rowNum int) string {
 	titlesRange := "Участники!A1:M1"
 	resTitle := parseRow(repo.GetValues(titlesRange))
 
-	out := "Информация о пользователе\n"
+	out := "`Информация о пользователе`\n\n"
 
 	for i, _ := range resVal {
 		if resTitle[i] == "" {
 			break
 		}
 		if i == 1 || i == 2 || resVal[i] == "" {
+			continue
+		}
+		if i == 7 && resVal[i] == "0" {
 			continue
 		}
 		if i == 11 || i == 12 {
@@ -197,15 +260,30 @@ func searchByRow(repo *Repo, rowNum int) string {
 			} else {
 				temp = "неоплачены"
 			}
-			out += fmt.Sprintf("%v : %v \n", resTitle[i], temp)
+			if i == 11 {
+				resTitle[i] = "За 3 месяца"
+			}
+			if i == 12 {
+				resTitle[i] = "За этот месяц"
+			}
+			out += fmt.Sprintf("`%v:%s`\n",
+				resTitle[i], formatOutStringToLenghtAddSpacesLeft(24-len([]rune(resTitle[i])), temp))
 			continue
 		}
 
-		out += fmt.Sprintf("%v : %v \n", resTitle[i], resVal[i])
+		out += fmt.Sprintf("`%v:%s`\n",
+			resTitle[i], formatOutStringToLenghtAddSpacesLeft(24-len([]rune(resTitle[i])), resVal[i]))
 	}
 
 	return out
+}
 
+func formatOutStringToLenghtAddSpacesLeft(length int, str string) string {
+	length -= len([]rune(str))
+	for i := 0; i < length; i++ {
+		str = " " + str
+	}
+	return str
 }
 
 func getRowByName(repo *Repo, name string) (int, error) {
