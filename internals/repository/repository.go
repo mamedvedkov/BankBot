@@ -1,4 +1,4 @@
-package internals
+package repository
 
 import (
 	"encoding/json"
@@ -21,8 +21,8 @@ const (
 )
 
 type Repo struct {
-	Srv           *sheets.Service
-	SpreadsheetId string
+	srv           *sheets.Service
+	spreadsheetId string
 }
 
 func NewRepo() *Repo {
@@ -39,32 +39,19 @@ func NewRepo() *Repo {
 
 	client := getClient(config)
 
-	adapter := new(Repo)
+	r := &Repo{
+		srv:           nil,
+		spreadsheetId: "",
+	}
 
-	adapter.Srv, err = sheets.New(client)
+	r.srv, err = sheets.New(client)
 	if err != nil {
 		log.Fatalf("Unable to retrieve Sheets client: %v", err)
 	}
 
-	adapter.SpreadsheetId = tableId
+	r.spreadsheetId = tableId
 
-	return adapter
-}
-
-func (adapter *Repo) GetValues(readRange string) [][]interface{} {
-	//log.Printf("get range %s", readRange)
-
-	resp, err := adapter.Srv.Spreadsheets.Values.Get(adapter.SpreadsheetId, readRange).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve data from sheet: %v", err)
-	}
-
-	if len(resp.Values) == 0 {
-		log.Println("No data found.")
-		return nil
-	}
-
-	return resp.Values
+	return r
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
@@ -114,4 +101,40 @@ func saveToken(path string, token *oauth2.Token) {
 	}
 	defer f.Close()
 	json.NewEncoder(f).Encode(token)
+}
+
+func (r *Repo) getValues(readRange string) [][]interface{} {
+	//log.Printf("get range %s", readRange)
+
+	resp, err := r.srv.Spreadsheets.Values.Get(r.spreadsheetId, readRange).Do()
+	if err != nil {
+		log.Fatalf("Unable to retrieve data from sheet: %v", err)
+	}
+
+	if len(resp.Values) == 0 {
+		log.Println("No data found.")
+		return nil
+	}
+
+	return resp.Values
+}
+
+func (r *Repo) GetSummary(readRange string) [][]interface{} {
+	return r.getValues(readRange)
+}
+
+func (r *Repo) GetMembers(readRange string) [][]interface{} {
+	return r.getValues(readRange)
+}
+
+func (r *Repo) GetPayments(readRange string) [][]interface{} {
+	return r.getValues(readRange)
+}
+
+func (r *Repo) GetLoans(readRange string) [][]interface{} {
+	return r.getValues(readRange)
+}
+
+func (r *Repo) GetHolders(readRange string) [][]interface{} {
+	return r.getValues(readRange)
 }

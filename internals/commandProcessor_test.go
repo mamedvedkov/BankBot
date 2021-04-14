@@ -1,12 +1,13 @@
 package internals
 
 import (
+	"github.com/mamedvedkov/BankBot/internals/repository"
 	"testing"
 )
 
 func Test_getRowByTgId(t *testing.T) {
 	type args struct {
-		adapter *Repo
+		adapter *repository.Repo
 		tgId    int
 	}
 	tests := []struct {
@@ -17,7 +18,7 @@ func Test_getRowByTgId(t *testing.T) {
 		{
 			name: "testGetRowByTgId",
 			args: args{
-				adapter: NewRepo(),
+				adapter: repository.NewRepo(),
 				tgId:    72597934,
 			},
 			want: 3,
@@ -34,7 +35,7 @@ func Test_getRowByTgId(t *testing.T) {
 
 func Test_aboutMyPayment(t *testing.T) {
 	type args struct {
-		adapter *Repo
+		adapter *repository.Repo
 		id      int
 	}
 	tests := []struct {
@@ -45,7 +46,7 @@ func Test_aboutMyPayment(t *testing.T) {
 		{
 			name: "testAboutMyPayment",
 			args: args{
-				adapter: NewRepo(),
+				adapter: repository.NewRepo(),
 				id:      69711013,
 			},
 			want: "Статистика по платежам\n" +
@@ -70,7 +71,7 @@ func Test_aboutMyPayment(t *testing.T) {
 
 func Test_status(t *testing.T) {
 	type args struct {
-		adapter *Repo
+		adapter *repository.Repo
 	}
 	tests := []struct {
 		name string
@@ -79,7 +80,7 @@ func Test_status(t *testing.T) {
 	}{
 		{
 			name: "test status",
-			args: args{NewRepo()},
+			args: args{repository.NewRepo()},
 			want: "Капитал - 1 320 950₽\nЗанято - 898 337₽\nЗапас - 150 208₽\nАктив - 272 405₽",
 		},
 	}
@@ -94,7 +95,7 @@ func Test_status(t *testing.T) {
 
 func Test_cardHolders(t *testing.T) {
 	type args struct {
-		repo *Repo
+		repo *repository.Repo
 	}
 	tests := []struct {
 		name string
@@ -103,7 +104,7 @@ func Test_cardHolders(t *testing.T) {
 	}{
 		{
 			name: "test card holders",
-			args: args{NewRepo()},
+			args: args{repository.NewRepo()},
 			want: "",
 		},
 	}
@@ -118,7 +119,7 @@ func Test_cardHolders(t *testing.T) {
 
 func Test_debts(t *testing.T) {
 	type args struct {
-		repo *Repo
+		repo *repository.Repo
 	}
 	tests := []struct {
 		name string
@@ -127,7 +128,7 @@ func Test_debts(t *testing.T) {
 	}{
 		{
 			name: "test for debs",
-			args: args{NewRepo()},
+			args: args{repository.NewRepo()},
 			want: "",
 		},
 	}
@@ -142,7 +143,7 @@ func Test_debts(t *testing.T) {
 
 func Test_getRowByName(t *testing.T) {
 	type args struct {
-		repo *Repo
+		repo *repository.Repo
 		name string
 	}
 	tests := []struct {
@@ -154,7 +155,7 @@ func Test_getRowByName(t *testing.T) {
 		{
 			name: "тест поиск строки по фамилии",
 			args: args{
-				repo: NewRepo(),
+				repo: repository.NewRepo(),
 				name: "авиро",
 			},
 			want:    2,
@@ -163,7 +164,7 @@ func Test_getRowByName(t *testing.T) {
 		{
 			name: "тест поиск строки по имени",
 			args: args{
-				repo: NewRepo(),
+				repo: repository.NewRepo(),
 				name: "григор",
 			},
 			want:    2,
@@ -172,7 +173,7 @@ func Test_getRowByName(t *testing.T) {
 		{
 			name: "тест поиск строки по имени, слишком много результатов",
 			args: args{
-				repo: NewRepo(),
+				repo: repository.NewRepo(),
 				name: "алексан",
 			},
 			want:    0,
@@ -195,7 +196,7 @@ func Test_getRowByName(t *testing.T) {
 
 func Test_searchByRow(t *testing.T) {
 	type args struct {
-		repo   *Repo
+		repo   *repository.Repo
 		rowNum int
 	}
 	tests := []struct {
@@ -206,7 +207,7 @@ func Test_searchByRow(t *testing.T) {
 		{
 			name: "поиск по номеру строки",
 			args: args{
-				repo:   NewRepo(),
+				repo:   repository.NewRepo(),
 				rowNum: 3,
 			},
 			want: "",

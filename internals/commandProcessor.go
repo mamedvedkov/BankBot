@@ -2,6 +2,7 @@ package internals
 
 import (
 	"fmt"
+	"github.com/mamedvedkov/BankBot/internals/repository"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,13 +21,13 @@ import (
 "/aboutMyPayment" +
 */
 
-func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string {
+func Process(repo *repository.Repo, cmd string, isMain bool, update tgbotapi.Update) string {
 	var response string
 
 	id := update.Message.From.ID
 
 	// TODO: обработка новых пользователей, а не отфутболивание
-	if _, err := getRowByTgId(repo, id); err != nil {
+	if _, err := GetRowByTgId(repo, id); err != nil {
 		return err.Error()
 	}
 
@@ -56,27 +57,26 @@ func Process(repo *Repo, cmd string, isMain bool, update tgbotapi.Update) string
 	return response
 }
 
-func status(repo *Repo) string {
+func status(repo *repository.Repo) string {
 	var out string
 
-	//TODO: новое поле на B11
-	valuesRange := "A7:B10"
-	res := repo.GetValues(valuesRange)
+	valuesRange := "A7:B11"
+	res := repo.GetSummary(valuesRange)
 
 	for _, row := range res {
-		out += fmt.Sprintf("`%-7v- %10v`\n",
+		out += fmt.Sprintf("`%-10v- %10v`\n",
 			row[0], row[1])
 	}
 
 	return out
 }
 
-func aboutMyPayment(repo *Repo, id int) string {
-	row, _ := getRowByTgId(repo, id)
+func aboutMyPayment(repo *repository.Repo, id int) string {
+	row, _ := GetRowByTgId(repo, id)
 	valuesRange := fmt.Sprintf("Взносы!D%v:N%v", row, row)
-	resVal := parseRow(repo.GetValues(valuesRange))
+	resVal := parseRow(repo.GetPayments(valuesRange))
 	titlesRange := "Взносы!D1:N1"
-	resTitle := parseRow(repo.GetValues(titlesRange))
+	resTitle := parseRow(repo.GetPayments(titlesRange))
 
 	out := "Статистика по платежам\n"
 
@@ -93,9 +93,9 @@ func aboutMyPayment(repo *Repo, id int) string {
 	return out
 }
 
-func cardHolders(repo *Repo) string {
+func cardHolders(repo *repository.Repo) string {
 	cardHoldersRange := "Держатели!A2:B25"
-	res := repo.GetValues(cardHoldersRange)
+	res := repo.GetHolders(cardHoldersRange)
 	number := res[0][0]
 	sum := res[0][1]
 	city := res[2][0]
@@ -133,11 +133,11 @@ func showRules() string {
 	return fmt.Sprintf("Правила работы кассы\n%s", rulesLink)
 }
 
-func debts(repo *Repo) string {
+func debts(repo *repository.Repo) string {
 	debtsRange := "Займы!A2:C100"
-	res := repo.GetValues(debtsRange)
+	res := repo.GetLoans(debtsRange)
 	userRange := "Участники!A2:B100"
-	users := repo.GetValues(userRange)
+	users := repo.GetMembers(userRange)
 
 	delay := []string{"Просрочки"}
 	thisWeek := []string{"Платежи на этой неделе"}
@@ -202,10 +202,10 @@ func isThisWeek(date time.Time) bool {
 }
 
 func isDelay(date time.Time) bool {
-	return (date.Add(time.Hour*23).Add(time.Minute*59)).Before(time.Now())
+	return (date.Add(time.Hour * 23).Add(time.Minute * 59)).Before(time.Now())
 }
 
-func searchForUser(repo *Repo, text string) string {
+func searchForUser(repo *repository.Repo, text string) string {
 	splitedText := strings.Split(text, "/search ")
 
 	if len(splitedText) == 1 {
@@ -226,8 +226,8 @@ func searchForUser(repo *Repo, text string) string {
 	return searchByRow(repo, rowNum)
 }
 
-func aboutme(repo *Repo, id int) string {
-	rowNum, err := getRowByTgId(repo, id)
+func aboutme(repo *repository.Repo, id int) string {
+	rowNum, err := GetRowByTgId(repo, id)
 	if err != nil {
 		return err.Error()
 	}
@@ -235,11 +235,11 @@ func aboutme(repo *Repo, id int) string {
 	return searchByRow(repo, rowNum)
 }
 
-func searchByRow(repo *Repo, rowNum int) string {
+func searchByRow(repo *repository.Repo, rowNum int) string {
 	valuesRange := fmt.Sprintf("Участники!A%v:M%v", rowNum, rowNum)
-	resVal := parseRow(repo.GetValues(valuesRange))
+	resVal := parseRow(repo.GetMembers(valuesRange))
 	titlesRange := "Участники!A1:M1"
-	resTitle := parseRow(repo.GetValues(titlesRange))
+	resTitle := parseRow(repo.GetMembers(titlesRange))
 
 	out := "`Информация о пользователе`\n\n"
 
@@ -286,8 +286,8 @@ func formatOutStringToLenghtAddSpacesLeft(length int, str string) string {
 	return str
 }
 
-func getRowByName(repo *Repo, name string) (int, error) {
-	res := repo.GetValues("Участники!A2:A250")
+func getRowByName(repo *repository.Repo, name string) (int, error) {
+	res := repo.GetMembers("Участники!A2:A250")
 	name = strings.ReplaceAll(name, "ё", "е")
 	name = strings.ToLower(name)
 
@@ -322,8 +322,8 @@ func getRowByName(repo *Repo, name string) (int, error) {
 	return rowId, nil
 }
 
-func getRowByTgId(repo *Repo, tgId int) (int, error) {
-	res := repo.GetValues("Участники!A2:B250")
+func GetRowByTgId(repo *repository.Repo, tgId int) (int, error) {
+	res := repo.GetMembers("Участники!A2:B250")
 
 	var rowId int
 

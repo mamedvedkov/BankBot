@@ -1,4 +1,4 @@
-package internals
+package repository
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ func TestAdapter_GetValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := fmt.Sprintf("%v", tt.adapter.GetValues(tt.args.readRange)); !reflect.DeepEqual(got, tt.want) {
+			if got := fmt.Sprintf("%v", tt.adapter.getValues(tt.args.readRange)); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Repo.GetValues() = %v, want %v", got, tt.want)
 			}
 		})
